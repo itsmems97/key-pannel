@@ -3,51 +3,588 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Key Panel</title>
+<title>PIKAZOO Key Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body { background: #0f0f0f; color: #fff; font-family: Arial; padding: 20px; }
-  h1 { color: #4CAF50; text-align: center; }
-  .box { background: #1e1e1e; padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 500px; }
-  input, select { width: 100%; padding: 10px; margin: 8px 0; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 5px; }
-  button { width: 100%; padding: 12px; background: #4CAF50; color: #fff; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-  button:hover { background: #45a049; }
-  .key-display { background: #2a2a2a; padding: 15px; border-radius: 5px; margin-top: 15px; word-break: break-all; color: #4CAF50; font-size: 18px; text-align: center; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { padding: 10px; border: 1px solid #333; text-align: left; font-size: 13px; }
-  th { background: #2a2a2a; }
-  .active { color: #4CAF50; }
-  .expired { color: #f44336; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #070b14;
+    --surface: #0d1525;
+    --surface2: #111d35;
+    --border: #1e2d4a;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow: rgba(59,130,246,0.15);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(6,182,212,0.05) 0%, transparent 50%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes bgPulse {
+    0% { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.1) rotate(3deg); }
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 40px 0 32px;
+    animation: fadeDown 0.6s ease;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 30px rgba(59,130,246,0.4);
+    animation: iconPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes iconPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+    50% { box-shadow: 0 0 40px rgba(59,130,246,0.7); }
+  }
+
+  .logo-text {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+  }
+
+  .header-sub {
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s ease 0.1s both;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .card:nth-child(2) { animation-delay: 0.15s; }
+  .card:nth-child(3) { animation-delay: 0.25s; }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Form elements */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  input, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+
+  select option { background: var(--surface2); }
+
+  /* Buttons */
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    color: #fff;
+    width: 100%;
+    margin-top: 4px;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(59,130,246,0.45);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-copy {
+    background: linear-gradient(135deg, var(--accent2), #0891b2);
+    color: #fff;
+    width: 100%;
+    margin-top: 10px;
+    box-shadow: 0 4px 16px rgba(6,182,212,0.25);
+  }
+
+  .btn-copy:hover { transform: translateY(-1px); }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 7px;
+  }
+
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+  .btn-success { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .btn-success:hover { background: rgba(16,185,129,0.25); }
+
+  .btn-warning { background: rgba(245,158,11,0.15); color: var(--orange); border: 1px solid rgba(245,158,11,0.3); }
+  .btn-warning:hover { background: rgba(245,158,11,0.25); }
+
+  .btn-reset { background: rgba(100,116,139,0.15); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+  .btn-reset:hover { background: rgba(100,116,139,0.25); color: var(--text); }
+
+  /* Generated key display */
+  .key-box {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 16px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(59,130,246,0.1);
+    animation: keyAppear 0.4s ease;
+  }
+
+  @keyframes keyAppear {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .key-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    word-break: break-all;
+  }
+
+  .key-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+
+  table { width: 100%; border-collapse: collapse; min-width: 600px; }
+
+  th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    letter-spacing: 0.5px;
+  }
+
+  th:first-child { border-radius: 8px 0 0 8px; }
+  th:last-child { border-radius: 0 8px 8px 0; }
+
+  td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .key-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .badge-active { background: rgba(16,185,129,0.12); color: var(--green); }
+  .badge-active::before { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  .badge-expired { background: rgba(239,68,68,0.12); color: var(--red); }
+  .badge-expired::before { background: var(--red); }
+
+  .badge-blocked { background: rgba(245,158,11,0.12); color: var(--orange); }
+  .badge-blocked::before { background: var(--orange); }
+
+  /* Actions */
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Search */
+  .search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+
+  .search-row input { flex: 1; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 14px;
+    z-index: 9999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    animation: modalIn 0.3s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .modal-text {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions .btn { flex: 1; }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    .stat-num { font-size: 18px; }
+    .key-value { font-size: 15px; }
+    .logo-text { font-size: 22px; }
+  }
 </style>
 </head>
 <body>
-<h1>🔑 Key Panel</h1>
 
-<div class="box">
-  <h3>Generate New Key</h3>
-  <input type="text" id="appName" placeholder="App Name (e.g. PUBG Store)" />
-  <select id="days">
-    <option value="7">7 Days</option>
-    <option value="30">30 Days</option>
-    <option value="90">90 Days</option>
-    <option value="180">180 Days</option>
-    <option value="365">1 Year</option>
-  </select>
-  <button onclick="generateKey()">Generate Key</button>
-  <div class="key-display" id="generatedKey" style="display:none"></div>
-  <button onclick="copyKey()" id="copyBtn" style="display:none; background:#2196F3;">Copy Key</button>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">🔑</div>
+      <div class="logo-text">PIKAZOO</div>
+    </div>
+    <div class="header-sub">KEY MANAGEMENT PANEL</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-label">Total Keys</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--green)" id="statActive">—</div>
+      <div class="stat-label">Active</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--red)" id="statExpired">—</div>
+      <div class="stat-label">Expired</div>
+    </div>
+  </div>
+
+  <!-- Generate Key -->
+  <div class="card">
+    <div class="card-title">⚡ Generate New Key</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>App / Member Name</label>
+        <input type="text" id="appName" placeholder="e.g. PUBG Store" />
+      </div>
+      <div class="form-group">
+        <label>Duration</label>
+        <select id="days">
+          <option value="7">7 Days</option>
+          <option value="30">30 Days</option>
+          <option value="60">60 Days</option>
+          <option value="90">90 Days</option>
+          <option value="180">180 Days</option>
+          <option value="365">1 Year</option>
+          <option value="99999">Lifetime</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="generateKey()" id="genBtn">
+      ⚡ Generate Key
+    </button>
+
+    <div id="keyResult" style="display:none">
+      <div class="key-box">
+        <div class="key-value" id="generatedKey"></div>
+        <div class="key-meta" id="keyMeta"></div>
+      </div>
+      <button class="btn btn-copy" onclick="copyKey()">📋 Copy Key</button>
+    </div>
+  </div>
+
+  <!-- Keys List -->
+  <div class="card">
+    <div class="card-title">🗂 Key Management</div>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Search key or name..." oninput="filterKeys()" />
+      <button class="btn btn-reset btn-sm" onclick="loadKeys()">🔄 Refresh</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Name</th>
+            <th>Expiry</th>
+            <th>Device</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="keysBody">
+          <tr><td colspan="6"><div class="empty-state"><div class="spinner"></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
-<div class="box">
-  <h3>All Keys</h3>
-  <button onclick="loadKeys()" style="background:#555;">Refresh Keys</button>
-  <table id="keysTable">
-    <tr><th>Key</th><th>App</th><th>Expiry</th><th>Device</th><th>Status</th></tr>
-  </table>
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Confirm Action</div>
+    <div class="modal-text" id="modalText">Are you sure?</div>
+    <div class="modal-actions">
+      <button class="btn btn-reset" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirmBtn">Confirm</button>
+    </div>
+  </div>
 </div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBjSg8viticfmkOogheNcnIaLR_28xnFhQ",
@@ -61,58 +598,206 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  function makeKey(length = 16) {
+  let allKeys = [];
+  let pendingAction = null;
+
+  // Generate key starting with PIKAZOO
+  function makeKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      if (i > 0 && i % 4 === 0) result += '-';
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    const rand = (n) => Array.from({length:n}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    return `PIKAZOO-${rand(4)}-${rand(4)}-${rand(4)}`;
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  function closeModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+    pendingAction = null;
+  }
+
+  function confirmAction(title, text, btnLabel, btnClass, action) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalText').textContent = text;
+    const btn = document.getElementById('modalConfirmBtn');
+    btn.textContent = btnLabel;
+    btn.className = `btn ${btnClass}`;
+    pendingAction = action;
+    btn.onclick = async () => {
+      closeModal();
+      await pendingAction();
+    };
+    document.getElementById('confirmModal').classList.add('show');
   }
 
   window.generateKey = async function() {
-    const appName = document.getElementById('appName').value || 'Default';
+    const appName = document.getElementById('appName').value.trim() || 'Member';
     const days = parseInt(document.getElementById('days').value);
+    const btn = document.getElementById('genBtn');
+
+    btn.innerHTML = '<span class="spinner"></span> Generating...';
+    btn.disabled = true;
+
     const key = makeKey();
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + days);
+    const expiry = days === 99999
+      ? new Date('2099-12-31').toISOString()
+      : (() => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString(); })();
 
-    await addDoc(collection(db, 'keys'), {
-      key: key,
-      appName: appName,
-      expiry: expiry.toISOString(),
-      deviceUID: null,
-      active: true,
-      createdAt: new Date().toISOString()
-    });
+    try {
+      await addDoc(collection(db, 'keys'), {
+        key,
+        appName,
+        expiry,
+        deviceUID: null,
+        deviceName: null,
+        active: true,
+        blocked: false,
+        createdAt: new Date().toISOString()
+      });
 
-    document.getElementById('generatedKey').style.display = 'block';
-    document.getElementById('generatedKey').textContent = key;
-    document.getElementById('copyBtn').style.display = 'block';
-    loadKeys();
-  }
+      document.getElementById('generatedKey').textContent = key;
+      document.getElementById('keyMeta').textContent =
+        `${appName} · ${days === 99999 ? 'Lifetime' : days + ' Days'} · Created ${new Date().toLocaleDateString()}`;
+      document.getElementById('keyResult').style.display = 'block';
+      showToast('Key generated successfully!');
+      loadKeys();
+    } catch(e) {
+      showToast('Error generating key', 'error');
+    }
+
+    btn.innerHTML = '⚡ Generate Key';
+    btn.disabled = false;
+  };
 
   window.copyKey = function() {
     const key = document.getElementById('generatedKey').textContent;
-    navigator.clipboard.writeText(key);
-    alert('Key copied!');
-  }
+    navigator.clipboard.writeText(key).then(() => showToast('Key copied to clipboard!'));
+  };
 
   window.loadKeys = async function() {
-    const table = document.getElementById('keysTable');
-    table.innerHTML = '<tr><th>Key</th><th>App</th><th>Expiry</th><th>Device</th><th>Status</th></tr>';
-    const snapshot = await getDocs(collection(db, 'keys'));
+    try {
+      const snapshot = await getDocs(collection(db, 'keys'));
+      allKeys = [];
+      snapshot.forEach(d => allKeys.push({ id: d.id, ...d.data() }));
+      allKeys.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      renderKeys(allKeys);
+      updateStats();
+    } catch(e) {
+      showToast('Error loading keys', 'error');
+    }
+  };
+
+  function updateStats() {
     const now = new Date();
-    snapshot.forEach(doc => {
-      const d = doc.data();
-      const expired = new Date(d.expiry) < now;
-      const status = expired ? '<span class="expired">Expired</span>' : '<span class="active">Active</span>';
-      const device = d.deviceUID ? d.deviceUID.substring(0, 10) + '...' : 'Not Activated';
-      table.innerHTML += `<tr><td>${d.key}</td><td>${d.appName}</td><td>${d.expiry.substring(0,10)}</td><td>${device}</td><td>${status}</td></tr>`;
-    });
+    const active = allKeys.filter(k => !k.blocked && new Date(k.expiry) > now).length;
+    const expired = allKeys.filter(k => new Date(k.expiry) <= now).length;
+    document.getElementById('statTotal').textContent = allKeys.length;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statExpired').textContent = expired;
   }
 
+  function getStatus(k) {
+    if (k.blocked) return 'blocked';
+    if (new Date(k.expiry) < new Date()) return 'expired';
+    return 'active';
+  }
+
+  function renderKeys(keys) {
+    const tbody = document.getElementById('keysBody');
+    if (keys.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🔑</div><p>No keys found</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = keys.map(k => {
+      const status = getStatus(k);
+      const expiryDate = new Date(k.expiry);
+      const isLifetime = expiryDate.getFullYear() >= 2099;
+      const expiryStr = isLifetime ? '♾ Lifetime' : expiryDate.toLocaleDateString();
+      const deviceStr = k.deviceName
+        ? `<span title="${k.deviceUID || ''}">${k.deviceName}</span>`
+        : (k.deviceUID ? `<span title="${k.deviceUID}">📱 ${k.deviceUID.substring(0,8)}...</span>` : '<span style="color:var(--muted)">Not activated</span>');
+
+      const badgeMap = {
+        active: '<span class="badge badge-active">Active</span>',
+        expired: '<span class="badge badge-expired">Expired</span>',
+        blocked: '<span class="badge badge-blocked">Blocked</span>'
+      };
+
+      return `<tr>
+        <td class="key-cell">${k.key}</td>
+        <td>${k.appName || '—'}</td>
+        <td>${expiryStr}</td>
+        <td>${deviceStr}</td>
+        <td>${badgeMap[status]}</td>
+        <td>
+          <div class="actions">
+            ${status !== 'blocked'
+              ? `<button class="btn btn-sm btn-danger" onclick="blockKey('${k.id}', '${k.key}')">🚫 Block</button>`
+              : `<button class="btn btn-sm btn-success" onclick="unblockKey('${k.id}', '${k.key}')">✅ Unblock</button>`
+            }
+            <button class="btn btn-sm btn-warning" onclick="resetKey('${k.id}', '${k.key}')">🔄 Reset</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteKey('${k.id}', '${k.key}')">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.filterKeys = function() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allKeys.filter(k =>
+      k.key.toLowerCase().includes(q) ||
+      (k.appName || '').toLowerCase().includes(q) ||
+      (k.deviceName || '').toLowerCase().includes(q)
+    );
+    renderKeys(filtered);
+  };
+
+  window.blockKey = function(id, key) {
+    confirmAction('Block Key', `Block key ${key}? App will stop working.`, '🚫 Block', 'btn-danger', async () => {
+      await updateDoc(doc(db, 'keys', id), { blocked: true });
+      showToast('Key blocked!');
+      loadKeys();
+    });
+  };
+
+  window.unblockKey = function(id, key) {
+    confirmAction('Unblock Key', `Reactivate key ${key}?`, '✅ Unblock', 'btn-success', async () => {
+      await updateDoc(doc(db, 'keys', id), { blocked: false });
+      showToast('Key reactivated!');
+      loadKeys();
+    });
+  };
+
+  window.resetKey = function(id, key) {
+    confirmAction('Reset Device', `Reset device binding for ${key}? User can activate on a new device.`, '🔄 Reset', 'btn-warning', async () => {
+      await updateDoc(doc(db, 'keys', id), { deviceUID: null, deviceName: null });
+      showToast('Device reset! Key can be used on a new device.');
+      loadKeys();
+    });
+  };
+
+  window.deleteKey = function(id, key) {
+    confirmAction('Delete Key', `Permanently delete ${key}? This cannot be undone.`, '🗑 Delete', 'btn-danger', async () => {
+      await deleteDoc(doc(db, 'keys', id));
+      showToast('Key deleted!');
+      loadKeys();
+    });
+  };
+
+  window.closeModal = closeModal;
+
+  // Close modal on overlay click
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Load on start
   loadKeys();
 </script>
 </body>
