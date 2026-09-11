@@ -628,8 +628,9 @@
     btn.className = `btn ${btnClass}`;
     pendingAction = action;
     btn.onclick = async () => {
+      const actionToRun = pendingAction;
       closeModal();
-      await pendingAction();
+      if (actionToRun) await actionToRun();
     };
     document.getElementById('confirmModal').classList.add('show');
   }
