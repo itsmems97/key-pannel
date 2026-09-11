@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Key Panel</title>
+<style>
+  body { background: #0f0f0f; color: #fff; font-family: Arial; padding: 20px; }
+  h1 { color: #4CAF50; text-align: center; }
+  .box { background: #1e1e1e; padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 500px; }
+  input, select { width: 100%; padding: 10px; margin: 8px 0; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 5px; }
+  button { width: 100%; padding: 12px; background: #4CAF50; color: #fff; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+  button:hover { background: #45a049; }
+  .key-display { background: #2a2a2a; padding: 15px; border-radius: 5px; margin-top: 15px; word-break: break-all; color: #4CAF50; font-size: 18px; text-align: center; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { padding: 10px; border: 1px solid #333; text-align: left; font-size: 13px; }
+  th { background: #2a2a2a; }
+  .active { color: #4CAF50; }
+  .expired { color: #f44336; }
+</style>
+</head>
+<body>
+<h1>🔑 Key Panel</h1>
+
+<div class="box">
+  <h3>Generate New Key</h3>
+  <input type="text" id="appName" placeholder="App Name (e.g. PUBG Store)" />
+  <select id="days">
+    <option value="7">7 Days</option>
+    <option value="30">30 Days</option>
+    <option value="90">90 Days</option>
+    <option value="180">180 Days</option>
+    <option value="365">1 Year</option>
+  </select>
+  <button onclick="generateKey()">Generate Key</button>
+  <div class="key-display" id="generatedKey" style="display:none"></div>
+  <button onclick="copyKey()" id="copyBtn" style="display:none; background:#2196F3;">Copy Key</button>
+</div>
+
+<div class="box">
+  <h3>All Keys</h3>
+  <button onclick="loadKeys()" style="background:#555;">Refresh Keys</button>
+  <table id="keysTable">
+    <tr><th>Key</th><th>App</th><th>Expiry</th><th>Device</th><th>Status</th></tr>
+  </table>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBjSg8viticfmkOogheNcnIaLR_28xnFhQ",
+    authDomain: "key-panel-1e294.firebaseapp.com",
+    projectId: "key-panel-1e294",
+    storageBucket: "key-panel-1e294.firebasestorage.app",
+    messagingSenderId: "370777776498",
+    appId: "1:370777776498:web:745b2592287fdac2c57deb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  function makeKey(length = 16) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      if (i > 0 && i % 4 === 0) result += '-';
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  window.generateKey = async function() {
+    const appName = document.getElementById('appName').value || 'Default';
+    const days = parseInt(document.getElementById('days').value);
+    const key = makeKey();
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + days);
+
+    await addDoc(collection(db, 'keys'), {
+      key: key,
+      appName: appName,
+      expiry: expiry.toISOString(),
+      deviceUID: null,
+      active: true,
+      createdAt: new Date().toISOString()
+    });
+
+    document.getElementById('generatedKey').style.display = 'block';
+    document.getElementById('generatedKey').textContent = key;
+    document.getElementById('copyBtn').style.display = 'block';
+    loadKeys();
+  }
+
+  window.copyKey = function() {
+    const key = document.getElementById('generatedKey').textContent;
+    navigator.clipboard.writeText(key);
+    alert('Key copied!');
+  }
+
+  window.loadKeys = async function() {
+    const table = document.getElementById('keysTable');
+    table.innerHTML = '<tr><th>Key</th><th>App</th><th>Expiry</th><th>Device</th><th>Status</th></tr>';
+    const snapshot = await getDocs(collection(db, 'keys'));
+    const now = new Date();
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      const expired = new Date(d.expiry) < now;
+      const status = expired ? '<span class="expired">Expired</span>' : '<span class="active">Active</span>';
+      const device = d.deviceUID ? d.deviceUID.substring(0, 10) + '...' : 'Not Activated';
+      table.innerHTML += `<tr><td>${d.key}</td><td>${d.appName}</td><td>${d.expiry.substring(0,10)}</td><td>${device}</td><td>${status}</td></tr>`;
+    });
+  }
+
+  loadKeys();
+</script>
+</body>
+</html>
