@@ -38,22 +38,36 @@ export default async function handler(req, res) {
     const docSnap = snapshot.docs[0];
     const data = docSnap.data();
 
+    // Blocked check
+    if (data.blocked) {
+      return res.status(200).json({ success: false, message: 'Key Blocked' });
+    }
+
+    // Expiry check
     if (new Date(data.expiry) < new Date()) {
       return res.status(200).json({ success: false, message: 'Key Expired' });
     }
 
-    if (data.deviceUID === null) {
+    // Device check
+    if (data.deviceUID === null || data.deviceUID === undefined) {
+      // Pehli baar activate
       await updateDoc(doc(db, 'keys', docSnap.id), { deviceUID: deviceUID });
-      return res.status(200).json({ success: true, message: 'Activated Successfully' });
-    }
-
-    if (data.deviceUID === deviceUID) {
-      return res.status(200).json({ success: true, message: 'Login Successful' });
-    } else {
+    } else if (data.deviceUID !== deviceUID) {
       return res.status(200).json({ success: false, message: 'Wrong Device' });
     }
 
+    // C++ code ke liye sahi format
+    const rng = Math.floor(Date.now() / 1000);
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: "PIKAZOO_AUTH_TOKEN",
+        rng: rng,
+        EXP: data.expiry.substring(0, 10)
+      }
+    });
+
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Server Error' });
+    return res.status(500).json({ success: false, message: 'Server Error: ' + error.message });
   }
 }
