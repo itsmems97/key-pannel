@@ -21,32 +21,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
 
-  // Form data aur JSON dono support
-  let key, deviceUID;
-
-  const contentType = req.headers['content-type'] || '';
-
-  if (contentType.includes('application/json')) {
-    key = req.body?.key;
-    deviceUID = req.body?.deviceUID;
-  } else {
-    // Form urlencoded parse karo manually
-    const bodyStr = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-    const params = new URLSearchParams(bodyStr);
-    key = params.get('key') || req.body?.key;
-    deviceUID = params.get('deviceUID') || params.get('uuid') || params.get('hwid') || req.body?.deviceUID;
-  }
-
-  // Log karo debugging ke liye
-  console.log('Received body:', req.body);
-  console.log('Key:', key, 'DeviceUID:', deviceUID);
+  const { key, deviceUID, deviceName } = req.body;
 
   if (!key || !deviceUID) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Key aur Device UID required hai',
-      received: { key: key || null, deviceUID: deviceUID || null, body: req.body }
-    });
+    return res.status(400).json({ success: false, message: 'Key aur Device UID required hai' });
   }
 
   try {
@@ -69,7 +47,10 @@ export default async function handler(req, res) {
     }
 
     if (data.deviceUID === null || data.deviceUID === undefined) {
-      await updateDoc(doc(db, 'keys', docSnap.id), { deviceUID: deviceUID });
+      await updateDoc(doc(db, 'keys', docSnap.id), {
+        deviceUID: deviceUID,
+        deviceName: deviceName || null
+      });
     } else if (data.deviceUID !== deviceUID) {
       return res.status(200).json({ success: false, message: 'Wrong Device' });
     }
