@@ -21,10 +21,32 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
 
-  const { key, deviceUID } = req.body;
+  // Form data aur JSON dono support
+  let key, deviceUID;
+
+  const contentType = req.headers['content-type'] || '';
+
+  if (contentType.includes('application/json')) {
+    key = req.body?.key;
+    deviceUID = req.body?.deviceUID;
+  } else {
+    // Form urlencoded parse karo manually
+    const bodyStr = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    const params = new URLSearchParams(bodyStr);
+    key = params.get('key') || req.body?.key;
+    deviceUID = params.get('deviceUID') || params.get('uuid') || params.get('hwid') || req.body?.deviceUID;
+  }
+
+  // Log karo debugging ke liye
+  console.log('Received body:', req.body);
+  console.log('Key:', key, 'DeviceUID:', deviceUID);
 
   if (!key || !deviceUID) {
-    return res.status(400).json({ success: false, message: 'Key aur Device UID required hai' });
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Key aur Device UID required hai',
+      received: { key: key || null, deviceUID: deviceUID || null, body: req.body }
+    });
   }
 
   try {
@@ -38,25 +60,20 @@ export default async function handler(req, res) {
     const docSnap = snapshot.docs[0];
     const data = docSnap.data();
 
-    // Blocked check
     if (data.blocked) {
       return res.status(200).json({ success: false, message: 'Key Blocked' });
     }
 
-    // Expiry check
     if (new Date(data.expiry) < new Date()) {
       return res.status(200).json({ success: false, message: 'Key Expired' });
     }
 
-    // Device check
     if (data.deviceUID === null || data.deviceUID === undefined) {
-      // Pehli baar activate
       await updateDoc(doc(db, 'keys', docSnap.id), { deviceUID: deviceUID });
     } else if (data.deviceUID !== deviceUID) {
       return res.status(200).json({ success: false, message: 'Wrong Device' });
     }
 
-    // C++ code ke liye sahi format
     const rng = Math.floor(Date.now() / 1000);
     return res.status(200).json({
       success: true,
