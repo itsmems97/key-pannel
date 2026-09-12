@@ -1,5 +1,14 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc
+} from "firebase/firestore";
+import crypto from "crypto";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjSg8viticfmkOogheNcnIaLR_28xnFhQ",
@@ -10,50 +19,179 @@ const firebaseConfig = {
   appId: "1:370777776498:web:745b2592287fdac2c57deb"
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app =
+  getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApps()[0];
+
 const db = getFirestore(app);
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store");
 
-  const { key, deviceUID } = req.body;
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-  if (!key || !deviceUID) {
-    return res.status(400).json({ success: false, message: 'Key aur Device UID required hai' });
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      message: "Method not allowed"
+    });
   }
 
   try {
-    const q = query(collection(db, 'keys'), where('key', '==', key));
+
+    let body = req.body;
+
+    // Support application/x-www-form-urlencoded
+    if (typeof body === "string") {
+      const params = new URLSearchParams(body);
+
+      body = Object.fromEntries(params.entries());
+    }
+
+    body = body || {};
+
+    // C++ sends:
+    // game=PUBG
+    // user_key=KEY
+    // serial=DEVICE_UUID
+
+    const game = body.game || "PUBG";
+    const userKey = body.user_key || body.key;
+    const deviceUID = body.serial || body.deviceUID;
+
+    if (!userKey || !deviceUID) {
+      return res.status(400).json({
+        success: false,
+        message: "Key aur Device UID required hai"
+      });
+    }
+
+    const q = query(
+      collection(db, "keys"),
+      where("key", "==", userKey)
+    );
+
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      return res.status(200).json({ success: false, message: 'Invalid Key' });
+      return res.status(200).json({
+        success: false,
+        message: "Invalid Key"
+      });
     }
 
-    const docSnap = snapshot.docs[0];
-    const data = docSnap.data();
+    const keyDoc = snapshot.docs[0];
+    const data = keyDoc.data();
 
-    if (new Date(data.expiry) < new Date()) {
-      return res.status(200).json({ success: false, message: 'Key Expired' });
+    // Optional app check
+    if (
+      data.appName &&
+      game &&
+      String(data.appName).toLowerCase() !== String(game).toLowerCase()
+    ) {
+      return res.status(200).json({
+        success: false,
+        message: "Invalid Application"
+      });
     }
 
-    if (data.deviceUID === null) {
-      await updateDoc(doc(db, 'keys', docSnap.id), { deviceUID: deviceUID });
-      return res.status(200).json({ success: true, message: 'Activated Successfully' });
+    // Blocked key
+    if (data.blocked === true) {
+      return res.status(200).json({
+        success: false,
+        message: "Key Blocked"
+      });
     }
 
-    if (data.deviceUID === deviceUID) {
-      return res.status(200).json({ success: true, message: 'Login Successful' });
-    } else {
-      return res.status(200).json({ success: false, message: 'Wrong Device' });
+    // Inactive key
+    if (data.active === false) {
+      return res.status(200).json({
+        success: false,
+        message: "Key Inactive"
+      });
     }
+
+    // Expiry check
+    if (!data.expiry) {
+      return res.status(200).json({
+        success: false,
+        message: "Invalid Expiry"
+      });
+    }
+
+    const expiryDate = new Date(data.expiry);
+
+    if (
+      Number.isNaN(expiryDate.getTime()) ||
+      expiryDate.getTime() <= Date.now()
+    ) {
+      return res.status(200).json({
+        success: false,
+        message: "Key Expired"
+      });
+    }
+
+    // First device activation
+    if (!data.deviceUID) {
+
+      await updateDoc(
+        doc(db, "keys", keyDoc.id),
+        {
+          deviceUID: deviceUID
+        }
+      );
+
+      const now = Math.floor(Date.now() / 1000);
+
+      return res.status(200).json({
+        success: true,
+        message: "Activated Successfully",
+
+        data: {
+          token: crypto.randomUUID(),
+          rng: now,
+          EXP: expiryDate.toISOString()
+        }
+      });
+    }
+
+    // Same device
+    if (String(data.deviceUID) === String(deviceUID)) {
+
+      const now = Math.floor(Date.now() / 1000);
+
+      return res.status(200).json({
+        success: true,
+        message: "Login Successful",
+
+        data: {
+          token: crypto.randomUUID(),
+          rng: now,
+          EXP: expiryDate.toISOString()
+        }
+      });
+    }
+
+    // Different device
+    return res.status(200).json({
+      success: false,
+      message: "Wrong Device"
+    });
 
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Server Error' });
+
+    console.error("CONNECT API ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
   }
 }
