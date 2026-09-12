@@ -2,16 +2,83 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>PIKAZOO Key Panel</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+  @font-face {
+    font-family: 'VIP';
+    src: url('./VIP.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ---- Cross-platform fixes: tap highlight, pinch-zoom, text selection ---- */
+  html {
+    touch-action: manipulation; /* kills double-tap-to-zoom, helps pinch-zoom too */
+    -ms-touch-action: manipulation;
+  }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  * {
+    /* Removes Android/Chrome/WebView's default gray tap-highlight rectangle,
+       which ignores border-radius and causes the sharp-corner flash on press */
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
+    -webkit-touch-callout: none; /* disables long-press context menu / callout */
+
+    /* Disable text selection / copy on long-press everywhere by default */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Re-enable normal text editing/selection inside actual input fields */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+
+  button, .btn, a, input:not([type="checkbox"]):not([type="radio"]), select {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    outline: none;
+  }
+
+  /* Restore native rendering for checkboxes/radios so the check mark is visible */
+  input[type="checkbox"], input[type="radio"] {
+    -webkit-appearance: checkbox;
+    -moz-appearance: checkbox;
+    appearance: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Buttons keep their rounded shape in every state (no native square flash) */
+  button, .btn, .dropdown-trigger,
+  button:active, button:focus, button:hover,
+  .btn:active, .btn:focus, .btn:hover,
+  .dropdown-trigger:active, .dropdown-trigger:focus, .dropdown-trigger:hover {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden; /* clips any inner highlight/ripple to the rounded corners */
+  }
 
   :root {
     --bg: #070b14;
-    --surface: #0d1525;
-    --surface2: #111d35;
+    --surface: rgba(13,21,37,0.72);
+    --surface2: rgba(17,29,53,0.65);
     --border: #1e2d4a;
     --accent: #3b82f6;
     --accent2: #06b6d4;
@@ -26,7 +93,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Inter', sans-serif;
+    font-family: 'VIP', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -49,6 +116,82 @@
   @keyframes bgPulse {
     0% { transform: scale(1) rotate(0deg); }
     100% { transform: scale(1.1) rotate(3deg); }
+  }
+
+  /* Abstract blurry animated background blobs (always-running) */
+  .bg-blobs {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    filter: blur(90px);
+    pointer-events: none;
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.45;
+    will-change: transform;
+  }
+
+  .blob1 {
+    width: 420px; height: 420px;
+    background: radial-gradient(circle at 30% 30%, var(--accent), transparent 70%);
+    top: -120px; left: -120px;
+    animation: blobMove1 16s ease-in-out infinite alternate;
+  }
+
+  .blob2 {
+    width: 380px; height: 380px;
+    background: radial-gradient(circle at 70% 70%, var(--accent2), transparent 70%);
+    bottom: -140px; right: -100px;
+    animation: blobMove2 20s ease-in-out infinite alternate;
+  }
+
+  .blob3 {
+    width: 320px; height: 320px;
+    background: radial-gradient(circle at 50% 50%, var(--green), transparent 70%);
+    top: 35%; left: 55%;
+    animation: blobMove3 24s ease-in-out infinite alternate;
+  }
+
+  @keyframes blobMove1 {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(110px,90px) scale(1.25); }
+  }
+  @keyframes blobMove2 {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(-100px,-70px) scale(1.15); }
+  }
+  @keyframes blobMove3 {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(-90px,60px) scale(0.85); }
+  }
+
+  /* Live status indicator (always-running pulse) */
+  .live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 1.5px;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: liveBlink 1.6s ease-in-out infinite;
+  }
+
+  @keyframes liveBlink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.75); }
   }
 
   .container {
@@ -81,9 +224,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    color: #fff;
     box-shadow: 0 0 30px rgba(59,130,246,0.4);
     animation: iconPulse 3s ease-in-out infinite;
+  }
+
+  .logo-icon svg { width: 24px; height: 24px; }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    vertical-align: -3px;
+  }
+
+  .icon-sm {
+    width: 13px;
+    height: 13px;
+    vertical-align: -2px;
+    margin-right: 2px;
   }
 
   @keyframes iconPulse {
@@ -122,12 +281,14 @@
     border-radius: 12px;
     padding: 16px;
     text-align: center;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .stat-num {
     font-size: 24px;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'VIP', monospace;
     color: var(--accent);
   }
 
@@ -145,6 +306,8 @@
     padding: 24px;
     margin-bottom: 20px;
     animation: fadeUp 0.6s ease both;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .card:nth-child(2) { animation-delay: 0.15s; }
@@ -184,7 +347,7 @@
     color: var(--text);
     padding: 11px 14px;
     font-size: 14px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'VIP', sans-serif;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     width: 100%;
@@ -206,7 +369,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    font-family: 'Inter', sans-serif;
+    font-family: 'VIP', sans-serif;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -274,7 +437,7 @@
   }
 
   .key-value {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'VIP', monospace;
     font-size: 20px;
     font-weight: 600;
     color: var(--accent2);
@@ -317,7 +480,7 @@
   tr:hover td { background: rgba(255,255,255,0.02); }
 
   .key-cell {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'VIP', monospace;
     font-size: 12px;
     color: var(--accent2);
   }
@@ -380,6 +543,8 @@
     align-items: center;
     gap: 10px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .toast.show { transform: translateY(0); opacity: 1; }
@@ -409,6 +574,8 @@
     width: 100%;
     max-width: 400px;
     animation: modalIn 0.3s ease;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   @keyframes modalIn {
@@ -451,8 +618,206 @@
     color: var(--muted);
   }
 
-  .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state-icon { width: 40px; height: 40px; margin: 0 auto 12px; color: var(--muted); }
+  .empty-state-icon-svg { width: 100%; height: 100%; }
+
+  /* Login screen */
+  .login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 360px;
+    animation: fadeUp 0.5s ease both;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .remember-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .password-wrapper { position: relative; }
+
+  .password-wrapper input { padding-right: 44px; }
+
+  .password-toggle {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .password-toggle:hover { color: var(--text); }
+
+  .login-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  .logout-btn {
+    position: absolute;
+    top: 20px;
+    right: 16px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'VIP', sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .logout-btn:hover { color: var(--text); border-color: var(--muted); }
   .empty-state p { font-size: 14px; }
+
+  /* Custom dropdown (replaces native <select> / Android picker) */
+  .dropdown-trigger {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: 'VIP', sans-serif;
+    outline: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .dropdown-trigger:hover,
+  .dropdown-trigger.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+
+  .dropdown-trigger .chevron { transition: transform 0.25s ease; flex-shrink: 0; color: var(--muted); }
+  .dropdown-trigger.active .chevron { transform: rotate(180deg); color: var(--accent); }
+
+  .picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .picker-overlay.show { display: flex; }
+
+  .picker-sheet {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 78vh;
+    overflow-y: auto;
+    animation: sheetIn 0.25s ease;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  @keyframes sheetIn {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .picker-header {
+    padding: 18px 20px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .picker-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.15s ease;
+  }
+
+  .picker-option:last-child { border-bottom: none; }
+  .picker-option:hover, .picker-option:active { background: rgba(255,255,255,0.04); }
+
+  .radio-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.2s ease;
+  }
+
+  .radio-circle.selected { border-color: var(--accent); }
+
+  .radio-circle.selected::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(59,130,246,0.6);
+  }
 
   /* Animations */
   @keyframes fadeDown {
@@ -476,15 +841,53 @@
 </head>
 <body>
 
-<div class="container">
+<!-- Abstract blurry animated background (always running) -->
+<div class="bg-blobs" aria-hidden="true">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+</div>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="logo" style="justify-content:center; width:100%; margin-bottom:24px;">
+      <div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+      <div class="logo-text">PIKAZOO</div>
+    </div>
+    <form id="loginForm" autocomplete="on" onsubmit="event.preventDefault(); attemptLogin(); return false;">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Username</label>
+        <input type="text" id="loginUsername" name="username" placeholder="Username" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="loginPassword" name="password" placeholder="Password" autocomplete="current-password" />
+          <button type="button" class="password-toggle" id="togglePasswordBtn" onclick="togglePasswordVisibility()"></button>
+        </div>
+      </div>
+      <label class="remember-row">
+        <input type="checkbox" id="rememberMe" checked />
+        <span>Remember me</span>
+      </label>
+      <div class="login-error" id="loginError">Invalid username or password</div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:18px;">Login</button>
+    </form>
+  </div>
+</div>
+
+<div class="container" id="mainPanel" style="display:none">
+  <button class="logout-btn" id="logoutBtn" onclick="logout()">Logout</button>
 
   <!-- Header -->
   <div class="header">
     <div class="logo">
-      <div class="logo-icon">🔑</div>
+      <div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
       <div class="logo-text">PIKAZOO</div>
     </div>
     <div class="header-sub">KEY MANAGEMENT PANEL</div>
+    <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
   </div>
 
   <!-- Stats -->
@@ -505,7 +908,7 @@
 
   <!-- Generate Key -->
   <div class="card">
-    <div class="card-title">⚡ Generate New Key</div>
+    <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate New Key</div>
     <div class="form-row">
       <div class="form-group">
         <label>App / Member Name</label>
@@ -513,19 +916,15 @@
       </div>
       <div class="form-group">
         <label>Duration</label>
-        <select id="days">
-          <option value="7">7 Days</option>
-          <option value="30">30 Days</option>
-          <option value="60">60 Days</option>
-          <option value="90">90 Days</option>
-          <option value="180">180 Days</option>
-          <option value="365">1 Year</option>
-          <option value="99999">Lifetime</option>
-        </select>
+        <button type="button" class="dropdown-trigger" id="daysTrigger" onclick="openDurationPicker()">
+          <span id="daysLabel">7 Days</span>
+          <svg class="icon chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <input type="hidden" id="days" value="7" />
       </div>
     </div>
     <button class="btn btn-primary" onclick="generateKey()" id="genBtn">
-      ⚡ Generate Key
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate Key
     </button>
 
     <div id="keyResult" style="display:none">
@@ -533,17 +932,17 @@
         <div class="key-value" id="generatedKey"></div>
         <div class="key-meta" id="keyMeta"></div>
       </div>
-      <button class="btn btn-copy" onclick="copyKey()">📋 Copy Key</button>
+      <button class="btn btn-copy" onclick="copyKey()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copy Key</button>
     </div>
   </div>
 
   <!-- Keys List -->
   <div class="card">
-    <div class="card-title">🗂 Key Management</div>
+    <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Key Management</div>
 
     <div class="search-row">
       <input type="text" id="searchInput" placeholder="Search key or name..." oninput="filterKeys()" />
-      <button class="btn btn-reset btn-sm" onclick="loadKeys()">🔄 Refresh</button>
+      <button class="btn btn-reset btn-sm" onclick="loadKeys()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh</button>
     </div>
 
     <div class="table-wrap">
@@ -579,6 +978,14 @@
   </div>
 </div>
 
+<!-- Duration Picker (replaces native select) -->
+<div class="picker-overlay" id="durationOverlay">
+  <div class="picker-sheet">
+    <div class="picker-header">Select Duration</div>
+    <div id="durationList"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -601,6 +1008,24 @@
   let allKeys = [];
   let pendingAction = null;
 
+  // Icon helper — renders inline SVG icons in place of emoji
+  const ICON_PATHS = {
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    ban: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+    refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    key: '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>',
+    smartphone: '<rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+    eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+    'eye-off': '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+  };
+
+  function icon(name, cls = 'icon') {
+    return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name]}</svg>`;
+  }
+
   // Generate key starting with PIKAZOO
   function makeKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -610,13 +1035,42 @@
 
   function showToast(msg, type = 'success') {
     const t = document.getElementById('toast');
-    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.innerHTML = icon(type === 'success' ? 'check' : 'x') + `<span>${msg}</span>`;
     t.className = `toast ${type} show`;
     setTimeout(() => t.className = 'toast', 3000);
   }
 
+  // --- Body scroll lock (prevents background page scrolling while any popup is open) ---
+  let scrollLockCount = 0;
+  let savedScrollY = 0;
+
+  function lockBodyScroll() {
+    if (scrollLockCount === 0) {
+      savedScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${savedScrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+    }
+    scrollLockCount++;
+  }
+
+  function unlockBodyScroll() {
+    scrollLockCount = Math.max(0, scrollLockCount - 1);
+    if (scrollLockCount === 0) {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      window.scrollTo(0, savedScrollY);
+    }
+  }
+
   function closeModal() {
     document.getElementById('confirmModal').classList.remove('show');
+    unlockBodyScroll();
     pendingAction = null;
   }
 
@@ -624,7 +1078,7 @@
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalText').textContent = text;
     const btn = document.getElementById('modalConfirmBtn');
-    btn.textContent = btnLabel;
+    btn.innerHTML = btnLabel;
     btn.className = `btn ${btnClass}`;
     pendingAction = action;
     btn.onclick = async () => {
@@ -633,6 +1087,7 @@
       if (actionToRun) await actionToRun();
     };
     document.getElementById('confirmModal').classList.add('show');
+    lockBodyScroll();
   }
 
   window.generateKey = async function() {
@@ -670,7 +1125,7 @@
       showToast('Error generating key', 'error');
     }
 
-    btn.innerHTML = '⚡ Generate Key';
+    btn.innerHTML = icon('zap') + ' Generate Key';
     btn.disabled = false;
   };
 
@@ -710,7 +1165,7 @@
   function renderKeys(keys) {
     const tbody = document.getElementById('keysBody');
     if (keys.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🔑</div><p>No keys found</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">${icon('key', 'empty-state-icon-svg')}</div><p>No keys found</p></div></td></tr>`;
       return;
     }
 
@@ -718,10 +1173,10 @@
       const status = getStatus(k);
       const expiryDate = new Date(k.expiry);
       const isLifetime = expiryDate.getFullYear() >= 2099;
-      const expiryStr = isLifetime ? '♾ Lifetime' : expiryDate.toLocaleDateString();
+      const expiryStr = isLifetime ? '∞ Lifetime' : expiryDate.toLocaleDateString();
       const deviceStr = k.deviceName
         ? `<span title="${k.deviceUID || ''}">${k.deviceName}</span>`
-        : (k.deviceUID ? `<span title="${k.deviceUID}">📱 ${k.deviceUID.substring(0,8)}...</span>` : '<span style="color:var(--muted)">Not activated</span>');
+        : (k.deviceUID ? `<span title="${k.deviceUID}">${icon('smartphone', 'icon-sm')} ${k.deviceUID.substring(0,8)}...</span>` : '<span style="color:var(--muted)">Not activated</span>');
 
       const badgeMap = {
         active: '<span class="badge badge-active">Active</span>',
@@ -738,11 +1193,11 @@
         <td>
           <div class="actions">
             ${status !== 'blocked'
-              ? `<button class="btn btn-sm btn-danger" onclick="blockKey('${k.id}', '${k.key}')">🚫 Block</button>`
-              : `<button class="btn btn-sm btn-success" onclick="unblockKey('${k.id}', '${k.key}')">✅ Unblock</button>`
+              ? `<button class="btn btn-sm btn-danger" onclick="blockKey('${k.id}', '${k.key}')">${icon('ban')} Block</button>`
+              : `<button class="btn btn-sm btn-success" onclick="unblockKey('${k.id}', '${k.key}')">${icon('check')} Unblock</button>`
             }
-            <button class="btn btn-sm btn-warning" onclick="resetKey('${k.id}', '${k.key}')">🔄 Reset</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteKey('${k.id}', '${k.key}')">🗑</button>
+            <button class="btn btn-sm btn-warning" onclick="resetKey('${k.id}', '${k.key}')">${icon('refresh')} Reset</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteKey('${k.id}', '${k.key}')">${icon('trash')}</button>
           </div>
         </td>
       </tr>`;
@@ -760,7 +1215,7 @@
   };
 
   window.blockKey = function(id, key) {
-    confirmAction('Block Key', `Block key ${key}? App will stop working.`, '🚫 Block', 'btn-danger', async () => {
+    confirmAction('Block Key', `Block key ${key}? App will stop working.`, `${icon('ban')} Block`, 'btn-danger', async () => {
       await updateDoc(doc(db, 'keys', id), { blocked: true });
       showToast('Key blocked!');
       loadKeys();
@@ -768,7 +1223,7 @@
   };
 
   window.unblockKey = function(id, key) {
-    confirmAction('Unblock Key', `Reactivate key ${key}?`, '✅ Unblock', 'btn-success', async () => {
+    confirmAction('Unblock Key', `Reactivate key ${key}?`, `${icon('check')} Unblock`, 'btn-success', async () => {
       await updateDoc(doc(db, 'keys', id), { blocked: false });
       showToast('Key reactivated!');
       loadKeys();
@@ -776,7 +1231,7 @@
   };
 
   window.resetKey = function(id, key) {
-    confirmAction('Reset Device', `Reset device binding for ${key}? User can activate on a new device.`, '🔄 Reset', 'btn-warning', async () => {
+    confirmAction('Reset Device', `Reset device binding for ${key}? User can activate on a new device.`, `${icon('refresh')} Reset`, 'btn-warning', async () => {
       await updateDoc(doc(db, 'keys', id), { deviceUID: null, deviceName: null });
       showToast('Device reset! Key can be used on a new device.');
       loadKeys();
@@ -784,7 +1239,7 @@
   };
 
   window.deleteKey = function(id, key) {
-    confirmAction('Delete Key', `Permanently delete ${key}? This cannot be undone.`, '🗑 Delete', 'btn-danger', async () => {
+    confirmAction('Delete Key', `Permanently delete ${key}? This cannot be undone.`, `${icon('trash')} Delete`, 'btn-danger', async () => {
       await deleteDoc(doc(db, 'keys', id));
       showToast('Key deleted!');
       loadKeys();
@@ -798,8 +1253,121 @@
     if (e.target === this) closeModal();
   });
 
-  // Load on start
-  loadKeys();
+  // --- Custom Duration Picker (replaces native <select>/Android picker) ---
+  const DURATIONS = [
+    { value: '7', label: '7 Days' },
+    { value: '30', label: '30 Days' },
+    { value: '60', label: '60 Days' },
+    { value: '90', label: '90 Days' },
+    { value: '180', label: '180 Days' },
+    { value: '365', label: '1 Year' },
+    { value: '99999', label: 'Lifetime' }
+  ];
+
+  function renderDurationPicker() {
+    const current = document.getElementById('days').value;
+    const list = document.getElementById('durationList');
+    list.innerHTML = DURATIONS.map(d => `
+      <div class="picker-option" onclick="selectDuration('${d.value}', '${d.label}')">
+        <span>${d.label}</span>
+        <span class="radio-circle ${d.value === current ? 'selected' : ''}"></span>
+      </div>
+    `).join('');
+  }
+
+  window.openDurationPicker = function() {
+    renderDurationPicker();
+    document.getElementById('durationOverlay').classList.add('show');
+    document.getElementById('daysTrigger').classList.add('active');
+    lockBodyScroll();
+  };
+
+  window.closeDurationPicker = function() {
+    document.getElementById('durationOverlay').classList.remove('show');
+    document.getElementById('daysTrigger').classList.remove('active');
+    unlockBodyScroll();
+  };
+
+  window.selectDuration = function(value, label) {
+    document.getElementById('days').value = value;
+    document.getElementById('daysLabel').textContent = label;
+    closeDurationPicker();
+  };
+
+  document.getElementById('durationOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeDurationPicker();
+  });
+
+  // --- Auth ---
+  const AUTH_USER = '@PIKAZOOARMY';
+  const AUTH_PASS = '@Itsmems97';
+
+  function showMainPanel() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainPanel').style.display = 'block';
+    loadKeys();
+  }
+
+  function checkAuth() {
+    if (localStorage.getItem('pikazoo_auth') === 'true' || sessionStorage.getItem('pikazoo_auth') === 'true') {
+      showMainPanel();
+    } else {
+      document.getElementById('togglePasswordBtn').innerHTML = icon('eye');
+    }
+  }
+
+  window.attemptLogin = function() {
+    const u = document.getElementById('loginUsername').value.trim();
+    const p = document.getElementById('loginPassword').value;
+    const remember = document.getElementById('rememberMe').checked;
+    const errorEl = document.getElementById('loginError');
+    if (u === AUTH_USER && p === AUTH_PASS) {
+      if (remember) {
+        localStorage.setItem('pikazoo_auth', 'true');
+        sessionStorage.removeItem('pikazoo_auth');
+      } else {
+        sessionStorage.setItem('pikazoo_auth', 'true');
+        localStorage.removeItem('pikazoo_auth');
+      }
+      errorEl.style.display = 'none';
+
+      // Prompt browser / Google Password Manager to save the credentials
+      if (window.PasswordCredential) {
+        try {
+          const cred = new PasswordCredential({ id: u, password: p, name: u });
+          navigator.credentials.store(cred);
+        } catch (e) { /* Credential Management API not available */ }
+      }
+
+      showMainPanel();
+    } else {
+      errorEl.style.display = 'block';
+    }
+  };
+
+  window.togglePasswordVisibility = function() {
+    const input = document.getElementById('loginPassword');
+    const btn = document.getElementById('togglePasswordBtn');
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.innerHTML = icon('eye-off');
+    } else {
+      input.type = 'password';
+      btn.innerHTML = icon('eye');
+    }
+  };
+
+  window.logout = function() {
+    localStorage.removeItem('pikazoo_auth');
+    sessionStorage.removeItem('pikazoo_auth');
+    document.getElementById('mainPanel').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+  };
+
+  // Check login state on start
+  checkAuth();
 </script>
 </body>
 </html>
