@@ -1175,8 +1175,10 @@
       const isLifetime = expiryDate.getFullYear() >= 2099;
       const expiryStr = isLifetime ? '∞ Lifetime' : expiryDate.toLocaleDateString();
       const deviceStr = k.deviceName
-        ? `<span title="${k.deviceUID || ''}">${k.deviceName}</span>`
-        : (k.deviceUID ? `<span title="${k.deviceUID}">${icon('smartphone', 'icon-sm')} ${k.deviceUID.substring(0,8)}...</span>` : '<span style="color:var(--muted)">Not activated</span>');
+  ? `<div style="font-size:12px;font-weight:600">${k.deviceName}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${k.deviceUID || ''}</div>`
+  : (k.deviceUID
+    ? `<div style="font-size:11px;color:var(--accent2)">${k.deviceUID}</div>`
+    : '<span style="color:var(--muted)">Not activated</span>');
 
       const badgeMap = {
         active: '<span class="badge badge-active">Active</span>',
@@ -1185,7 +1187,10 @@
       };
 
       return `<tr>
-        <td class="key-cell">${k.key}</td>
+        <td>
+  <div class="key-cell" style="font-size:12px">${k.key}</div>
+  <button class="btn btn-sm" style="background:rgba(6,182,212,0.15);color:var(--accent2);border:1px solid rgba(6,182,212,0.3);margin-top:6px;width:100%" onclick="navigator.clipboard.writeText('${k.key}').then(()=>showToast('Key copied!'))">📋 Copy</button>
+</td>
         <td>${k.appName || '—'}</td>
         <td>${expiryStr}</td>
         <td>${deviceStr}</td>
