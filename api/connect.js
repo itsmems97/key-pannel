@@ -27,7 +27,6 @@ const app =
 const db = getFirestore(app);
 
 export default async function handler(req, res) {
-
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -45,24 +44,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    let body = req.body || {};
 
-    let body = req.body;
-
-    // Support application/x-www-form-urlencoded
     if (typeof body === "string") {
-      const params = new URLSearchParams(body);
-
-      body = Object.fromEntries(params.entries());
+      body = Object.fromEntries(
+        new URLSearchParams(body).entries()
+      );
     }
 
-    body = body || {};
-
-    // C++ sends:
-    // game=PUBG
-    // user_key=KEY
-    // serial=DEVICE_UUID
-
-    const game = body.game || "PUBG";
     const userKey = body.user_key || body.key;
     const deviceUID = body.serial || body.deviceUID;
 
@@ -88,45 +77,30 @@ export default async function handler(req, res) {
     }
 
     const keyDoc = snapshot.docs[0];
-    const data = keyDoc.data();
+    const keyData = keyDoc.data();
 
-    // Optional app check
-    if (
-      data.appName &&
-      game &&
-      String(data.appName).toLowerCase() !== String(game).toLowerCase()
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: "Invalid Application"
-      });
-    }
-
-    // Blocked key
-    if (data.blocked === true) {
+    if (keyData.blocked === true) {
       return res.status(200).json({
         success: false,
         message: "Key Blocked"
       });
     }
 
-    // Inactive key
-    if (data.active === false) {
+    if (keyData.active === false) {
       return res.status(200).json({
         success: false,
         message: "Key Inactive"
       });
     }
 
-    // Expiry check
-    if (!data.expiry) {
+    if (!keyData.expiry) {
       return res.status(200).json({
         success: false,
         message: "Invalid Expiry"
       });
     }
 
-    const expiryDate = new Date(data.expiry);
+    const expiryDate = new Date(keyData.expiry);
 
     if (
       Number.isNaN(expiryDate.getTime()) ||
@@ -138,56 +112,37 @@ export default async function handler(req, res) {
       });
     }
 
-    // First device activation
-    if (!data.deviceUID) {
-
+    // First activation
+    if (!keyData.deviceUID) {
       await updateDoc(
         doc(db, "keys", keyDoc.id),
         {
           deviceUID: deviceUID
         }
       );
-
-      const now = Math.floor(Date.now() / 1000);
-
-      return res.status(200).json({
-        success: true,
-        message: "Activated Successfully",
-
-        data: {
-          token: crypto.randomUUID(),
-          rng: now,
-          EXP: expiryDate.toISOString()
-        }
-      });
     }
-
-    // Same device
-    if (String(data.deviceUID) === String(deviceUID)) {
-
-      const now = Math.floor(Date.now() / 1000);
-
-      return res.status(200).json({
-        success: true,
-        message: "Login Successful",
-
-        data: {
-          token: crypto.randomUUID(),
-          rng: now,
-          EXP: expiryDate.toISOString()
-        }
-      });
-    }
-
     // Different device
+    else if (String(keyData.deviceUID) !== String(deviceUID)) {
+      return res.status(200).json({
+        success: false,
+        message: "Wrong Device"
+      });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+
     return res.status(200).json({
-      success: false,
-      message: "Wrong Device"
+      success: true,
+      message: "Login Successful",
+      data: {
+        token: crypto.randomUUID(),
+        rng: now,
+        EXP: expiryDate.toISOString()
+      }
     });
 
   } catch (error) {
-
-    console.error("CONNECT API ERROR:", error);
+    console.error("CONNECT ERROR:", error);
 
     return res.status(500).json({
       success: false,
